@@ -21,8 +21,11 @@ data.insert(0, 'Ones', 1)
 
 #Initializing the variables, setting X (training data) and y (target variable)
 cols = data.shape[1]
+print(cols)
 X = data.iloc[:,[0,6]]
+print(X)
 y = data.iloc[:,cols-1:cols]
+print(y)
 
 # The cost function is expecting numpy matrices. Therefore, convert X and y.
 X = np.matrix(X.values)
@@ -41,3 +44,5 @@ ax.legend(loc=2)
 ax.set_xlabel('Taxi Drives')
 ax.set_ylabel('Temperature')
 ax.set_title('Predicted Temperature vs. Taxi Drives')
+
+print(data)
