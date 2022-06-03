@@ -77,41 +77,18 @@ for i in range(len(temp_points_2)):
 #print(average_drives_temp_2)
 
 fig, ax = plt.subplots(figsize=(12,8))
-ax.plot(average_drives_temp[:,0], average_drives_temp[:,1], 'r', label='Taxi Drives')
-ax.plot(average_drives_temp_2[:,0], average_drives_temp_2[:,1], 'b', label='Taxi Drives')
+ax.plot(average_drives_temp[:,0], average_drives_temp[:,1], 'r', label='rounded to heel or half')
+ax.plot(average_drives_temp_2[:,0], average_drives_temp_2[:,1], 'b', label='rounded to heel')
+ax.legend(loc=4)
+ax.set_xlabel('Feelslike temperature')
+ax.set_ylabel('Taxi Drives')
+ax.set_title('Taxi Drives vs. Feelslike temperature')
 
 fig, ax = plt.subplots(figsize=(12,8))
 ax.scatter(average_drives_temp[:,0], average_drives_temp[:,1])
 ax.scatter(average_drives_temp_2[:,0], average_drives_temp_2[:,1])
 
 #print(data['feelslike'])
-
-# Add a column of ones to the training set so we can use a vectorized solution to computing the cost and gradients.
-# data.insert(0, 'Ones', 1)
-
-#Initializing the variables, setting X (training data) and y (target variable)
-# cols = data.shape[1]
-# X = average_drives_temp[:,0]
-# X = np.array(X)
-# print(X)
-# X_2 = np.arange(0, len(X), 1)
-# X_2 = np.array(X_2)
-# print(X_2)
-# X_combined = np.vstack((X_2, X))
-# print(X_combined)
-# y = average_drives_temp[:,1]
-# print(y)
-# for i in range(len(y)):
-#     t = float(y[i])
-#     if math.isnan(t):
-#         y[i] = 0
-# print(y)
-
-# The cost function is expecting numpy matrices. Therefore, convert X and y.
-# X = np.matrix(X_combined)
-# print(X)
-# y = np.matrix(y)
-# print(y)
 
 data_new = pd.DataFrame(average_drives_temp)
 print(data_new)
@@ -138,8 +115,10 @@ reg = linear_model.LinearRegression().fit(X,y)
 
 # Plot the results 
 #x = np.array(X[:, 1].A1)
-x = X[:,1].A1
-f = reg.predict(np.array(X)).flatten()
+x = np.array(X.A1)
+print(x)
+f = reg.predict(X).flatten()
+print(f)
 fig, ax = plt.subplots(figsize=(12,8))
 ax.plot(x, f, 'r', label='Prediction')
 ax.scatter(average_drives_temp[:,0], average_drives_temp[:,1], label='Traning Data')
