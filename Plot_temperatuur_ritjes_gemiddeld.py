@@ -91,19 +91,17 @@ ax.scatter(average_drives_temp_2[:,0], average_drives_temp_2[:,1])
 #print(data['feelslike'])
 
 data_new = pd.DataFrame(average_drives_temp)
+data_new[np.isnan(data_new)] = 0
 print(data_new)
+
+data_new.insert(0, 'Ones', 1)
 
 #Initializing the variables, setting X (training data) and y (target variable)
 #cols = data_new.shape[1]
 #print(cols)
-X = data_new.iloc[:,0]
+X = data_new.iloc[:,[0,1]]
 print(X)
-y = data_new.iloc[:,1]
-print(y)
-for i in range(len(y)):
-    t = float(y[i])
-    if math.isnan(t):
-        y[i] = 0
+y = data_new.iloc[:,[2]]
 print(y)
 
 # The cost function is expecting numpy matrices. Therefore, convert X and y.
@@ -115,7 +113,7 @@ reg = linear_model.LinearRegression().fit(X,y)
 
 # Plot the results 
 #x = np.array(X[:, 1].A1)
-x = np.array(X.A1)
+x = np.array(X[:, 1].A1)
 print(x)
 f = reg.predict(X).flatten()
 print(f)
@@ -123,6 +121,6 @@ fig, ax = plt.subplots(figsize=(12,8))
 ax.plot(x, f, 'r', label='Prediction')
 ax.scatter(average_drives_temp[:,0], average_drives_temp[:,1], label='Traning Data')
 ax.legend(loc=2)
-ax.set_xlabel('Taxi Drives')
-ax.set_ylabel('Temperature')
-ax.set_title('Predicted Temperature vs. Taxi Drives')
+ax.set_xlabel('Temperature')
+ax.set_ylabel('Taxi Drives')
+ax.set_title('Predicted Taxi Drives vs. Feelslike temperature')
