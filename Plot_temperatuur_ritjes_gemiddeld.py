@@ -138,8 +138,8 @@ reg = linear_model.LinearRegression().fit(X,y)
 
 # Plot the results 
 #x = np.array(X[:, 1].A1)
-x = X[:,1]
-f = reg.predict(X).flatten()
+x = X[:,1].A1
+f = reg.predict(np.array(X)).flatten()
 fig, ax = plt.subplots(figsize=(12,8))
 ax.plot(x, f, 'r', label='Prediction')
 ax.scatter(average_drives_temp[:,0], average_drives_temp[:,1], label='Traning Data')
