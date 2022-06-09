@@ -15,7 +15,7 @@ import os
 import math
 
 #print(os.getcwd())
-path = os.getcwd() + '\Weather_TaxiDrives.csv'
+path = os.getcwd() + '\Weather_TaxiDrivesPerHour.csv'
 data = pd.read_csv(path, header=0)
 print(data)
 print(data.head())
@@ -29,7 +29,7 @@ min_feelslike = np.min(data['feelslike'])
 max_feelslike = np.max(data['feelslike'])
 #print(max_feelslike)
 
-data.plot(kind='scatter', x='feelslike', y='Taxi Drives', figsize=(12,8))
+data.plot(kind='scatter', x='feelslike', y='Taxi drives per hour', figsize=(12,8))
 
 rounded_feelslikes = np.zeros(data_points)
 for i in range(data_points):
@@ -48,7 +48,7 @@ for i in range(len(temp_points)):
     drives_temp = []
     for j in range(data_points):
         if data['roundedfeelslike'][j] == temp_points[i]:
-            drives_temp.append(data['Taxi Drives'][j])
+            drives_temp.append(data['Taxi drives per hour'][j])
     average_drives = np.average(drives_temp)
     average_drives_temp[i] = [temp_points[i], average_drives]
     
@@ -70,7 +70,7 @@ for i in range(len(temp_points_2)):
     drives_temp_2 = []
     for j in range(data_points):
         if data['roundedfeelslike_2'][j] == temp_points_2[i]:
-            drives_temp_2.append(data['Taxi Drives'][j])
+            drives_temp_2.append(data['Taxi drives per hour'][j])
     average_drives_2 = np.average(drives_temp_2)
     average_drives_temp_2[i] = [temp_points_2[i], average_drives_2]
     
