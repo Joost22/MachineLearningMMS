@@ -27,11 +27,11 @@ trips = trips.drop(trips[trips['passenger_count']==0].index, axis = 0)
 trips = trips.drop(trips[trips['trip_distance']==0].index, axis = 0)
 trips = trips.drop(trips[trips['total_amount']==0].index, axis = 0)
 
-locations = trips[['PULocationID', 'DOLocationID']]
+locations = trips[['PULocationID']]
 centroids = locations.sample(15)
 
 def calculate_error(a,b):
-    error = np.sqrt((a[0]-b[0])**2+(a[1]-b[1])**2)
+    error = np.sqrt((a[0]-b[0])**2)
 
     return error 
 
