@@ -35,19 +35,19 @@ zones_Manhattan = [4,12,13,24,41,42,43,45,48,50,68,74,75,79,87,88,90,100,103,104
 zones_Queens = [2,7,8,9,10,15,16,19,27,28,30,38,53,56,57,64,70,73,82,83,86,92,93,95,96,98,101,102,117,121,122,124,129,130,131,132,134,135,138,139,145,146,157,160,171,173,175,179,180,191,192,193,196,197,198,201,203,205,207,215,216,218,219,223,226,252,253,258,260]
 zones_StatenIsland = [5,6,23,44,84,99,109,110,115,118,156,172,176,187,204,206,214,221,245,251]
 
-for i in range(len(trips['PULocationID'])):
-    if trips.iloc['PULocationID'][i] in zones_Bronx:
-        trips['cluster'][i] = 1
-    elif trips.iloc['PULocationID'][i] in zones_Brooklyn:
-        trips['cluster'][i] = 2
-    elif trips.iloc['PULocationID'][i] in zones_Manhattan:
-        trips['cluster'][i] = 3
-    elif trips.iloc['PULocationID'][i] in zones_Queens:
-        trips['cluster'][i] = 4
-    elif trips.iloc['PULocationID'][i] in zones_StatenIsland:
-        trips['cluster'][i] = 5
+for index in trips['PULocationID']:
+    if index in zones_Bronx:
+        trips['cluster'] = 1
+    elif index in zones_Brooklyn:
+        trips['cluster'] = 2
+    elif index in zones_Manhattan:
+        trips['cluster'] = 3
+    elif index in zones_Queens:
+        trips['cluster'] = 4
+    elif index in zones_StatenIsland:
+        trips['cluster'] = 5
     else:
-        trips['cluster'][i] = 0
+        trips['cluster'] = 0
 
 # def calculate_error(a,b):
 #     error = np.sqrt((a[0]-b[0])**2)
