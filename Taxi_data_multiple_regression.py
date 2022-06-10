@@ -9,7 +9,7 @@ import pyarrow.parquet as pq
 from sklearn import linear_model
 from sklearn.model_selection import train_test_split 
 
-trips = pq.read_table('yellow_tripdata_2018-03.parquet')
+trips = pq.read_table('yellow_tripdata_2022-01.parquet')
 trips = trips.to_pandas()
 
 #find duration of a trip
@@ -24,10 +24,11 @@ trips['tpep_pickup_datetime_hour']=trips['tpep_pickup_datetime'].dt.hour
 trips = trips.drop(trips[trips['duration']<30].index, axis = 0)
 trips = trips.drop(trips[trips['duration']>10000].index, axis = 0)
 trips = trips.drop(trips[trips['passenger_count']==0].index, axis = 0)
+trips = trips.drop(trips[trips['passenger_count']==float("NaN")].index, axis = 0)
 trips = trips.drop(trips[trips['trip_distance']==0].index, axis = 0)
 trips = trips.drop(trips[trips['total_amount']==0].index, axis = 0)
 
-X = trips[['duration','trip_distance']]
+X = trips[['duration']]
 y = trips['tip_amount']
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=.20, random_state=0)
