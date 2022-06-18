@@ -5,120 +5,248 @@ Created on Fri Jun 10 15:28:31 2022
 @author: roosm
 """
 
-#Importing libraries
-import pandas as pd
+# Import relevant packages
+import time
+start_time = time.time()
+
 import numpy as np
+import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
 import os
-import matplotlib.pyplot as plt
-from sklearn import linear_model
-import math
 
-trips = pd.read_csv('trips_01-2018.csv')
 
-##Importing taxi data (Files have to be in same folder as the code file)
-#Path_January_2018 = os.getcwd() + '/yellow_tripdata_2018-01.parquet'
+### --- DATA PREPARATION ---
 
-#Convert csv files to dataframe
-#Split the datetime column into separate date and time columns
-#Remove all pickup dates outtside of the month of interest (there is a lot of incorrect data)
-#Taxi_January_2018 = pd.read_parquet(Path_January_2018)
-#Taxi_January_2018['Date'] = pd.to_datetime(Taxi_January_2018['tpep_pickup_datetime']).dt.date
-#Taxi_January_2018['Time'] = pd.to_datetime(Taxi_January_2018['tpep_pickup_datetime']).dt.time
-#Taxi_January_2018 = Taxi_January_2018[pd.to_datetime(Taxi_January_2018['Date']).dt.month == 1]
-#Taxi_January_2018 = Taxi_January_2018[pd.to_datetime(Taxi_January_2018['Date']).dt.year == 2018]
+# Import relevant packages
+import pyarrow.parquet as pq
 
-#find duration of a trip
-trips['tpep_pickup_datetime'] = pd.to_datetime(trips['tpep_pickup_datetime'])
-trips['tpep_dropoff_datetime'] = pd.to_datetime(trips['tpep_dropoff_datetime'])
-trips['diff'] = trips['tpep_dropoff_datetime']-trips['tpep_pickup_datetime']
-trips['duration']=trips['diff'].dt.total_seconds()
+# Read the .parquet data as dataframe
+alltripdata = pq.read_table('yellow_tripdata_2018-01.parquet')
+alltripdata = alltripdata.to_pandas()
 
-# Remove unnecessary data
-trips.drop(['VendorID'], axis = 1, inplace=True)
-trips.drop(['RatecodeID'], axis = 1, inplace=True)
-trips.drop(['store_and_fwd_flag'], axis = 1, inplace=True)
-trips.drop(['payment_type'], axis = 1, inplace=True)
-trips.drop(['extra'], axis = 1, inplace=True)
-trips.drop(['mta_tax'], axis = 1, inplace=True)
-trips.drop(['tolls_amount'], axis = 1, inplace=True)
-trips.drop(['improvement_surcharge'], axis = 1, inplace=True)
-trips.drop(['congestion_surcharge'], axis = 1, inplace=True)
-trips.drop(['airport_fee'], axis = 1, inplace=True)
+# Set datetime columns to the correct .pd format
+alltripdata['tpep_pickup_datetime'] = pd.to_datetime(alltripdata['tpep_pickup_datetime'])
+alltripdata['tpep_dropoff_datetime'] = pd.to_datetime(alltripdata['tpep_dropoff_datetime'])
 
-##remove outliers 
-trips = trips.drop(trips[trips['trip_distance']<=0].index, axis = 0)
-trips = trips.drop(trips[trips['total_amount']<=0].index, axis = 0)
-trips = trips.drop(trips[trips['fare_amount']<=0].index, axis = 0)
-trips = trips.drop(trips[trips['passenger_count']<=0].index, axis = 0)
+# Find the day and hour of the trips
+alltripdata['trip_day'] = alltripdata['tpep_pickup_datetime'].dt.day
+alltripdata['trip_hour'] = alltripdata['tpep_pickup_datetime'].dt.hour
 
-# Remove all rows with NaN values in the columns 
-trips = trips.dropna()
+# Calculate the trip durations in seconds
+alltripdata['trip_duration'] = (alltripdata['tpep_dropoff_datetime'] - alltripdata['tpep_pickup_datetime']).dt.total_seconds()
 
-# Data preparing locations
-trips['cluster'] = trips['PULocationID']
+print(alltripdata)
 
-zones_Bronx = [3, 18, 20, 31, 32, 46, 47, 51, 58, 59, 60, 69, 78, 81, 94, 119, 126, 136, 147, 159, 167, 168, 169, 174, 182, 183, 184, 185, 199, 200, 208, 212, 213, 220, 235, 240, 241, 242, 247, 248, 250, 254, 259]
-zones_Brooklyn = [11, 14, 17, 21, 22, 25, 26, 29, 33, 34, 35, 36, 37, 39, 40, 49, 52, 54, 55, 61, 62, 63, 65, 66, 67, 71, 72, 76, 77, 80, 85, 89, 91, 97, 106, 108, 111, 112, 123,133,149,150,154,155,165,177,178,181,188,189,190,195,210,217,222,225,227,228,255,256,257]
-zones_Manhattan = [4,12,13,24,41,42,43,45,48,50,68,74,75,79,87,88,90,100,103,104,105,107,113,114,116,120,125,127,128,137,140,141,142,143,144,148,151,152,153,158,161,162,163,164,166,170,186,194,202,209,211,224,229,230,231,232,233,234,236,237,238,239,243,244,246,249,261,262,263]
-zones_Queens = [2,7,8,9,10,15,16,19,27,28,30,38,53,56,57,64,70,73,82,83,86,92,93,95,96,98,101,102,117,121,122,124,129,130,131,132,134,135,138,139,145,146,157,160,171,173,175,179,180,191,192,193,196,197,198,201,203,205,207,215,216,218,219,223,226,252,253,258,260]
-zones_StatenIsland = [5,6,23,44,84,99,109,110,115,118,156,172,176,187,204,206,214,221,245,251]
+### --- DATA FILTERING ---
 
-for index in trips['PULocationID']:
-    if index in zones_Bronx:
-        trips['cluster'] = 1
-    elif index in zones_Brooklyn:
-        trips['cluster'] = 2
-    elif index in zones_Manhattan:
-        trips['cluster'] = 3
-    elif index in zones_Queens:
-        trips['cluster'] = 4
-    elif index in zones_StatenIsland:
-        trips['cluster'] = 5
-    else:
-        trips['cluster'] = 0
+# Remove all trips that aren't paid by creditcard (= 1), these tips are unreliable since not all cash tips are declared due to taxation
+alltripdata = alltripdata[alltripdata.payment_type == 1]
 
-trips = trips.drop(trips[trips['cluster']==0].index, axis = 0)
+# Remove all trips with 0 or NaN column values except for the 'trip_hour', tip_amount' and 'tip_percentage' columns since these can be 0.
+alltripdata = alltripdata.replace(0, np.nan).dropna(axis=0, how='any', subset = ['trip_duration', 'payment_type', 'fare_amount', 'PULocationID', 'DOLocationID', 'trip_distance'])
+alltripdata = alltripdata.fillna(0)
 
-# data preparing weekend / week day. Monday 0, Tuesday 1
-# trips['cluster'] = trips['PULocationID']  
-trips['weekday'] = trips['date_time'].dt.dayofweek
+# Remove all negative tips
+alltripdata = alltripdata[alltripdata.tip_amount >= 0]
 
-#trips['passenger_count'].describe()
-#trips['passenger_count'].value_counts()
-#trips['duration'].describe()
+# Remove all tips over 100$ (assuming that tips above 100$ are errors)
+alltripdata = alltripdata[alltripdata.tip_amount <= 100]
 
-#trips = trips.drop(trips[trips['duration']<30].index, axis = 0)
-#trips = trips.drop(trips[trips['duration']>10000].index, axis = 0)
-#trips = trips.drop(trips[trips['passenger_count']<10].index, axis = 0)
-#trips = trips.drop(trips[trips['passenger_count']==float("NaN")].index, axis = 0)
+# Remove trips with duration below 30 seconds
+alltripdata = alltripdata[alltripdata.trip_duration >= 30]
 
+# Remove trips with duration above 10800 seconds (3 hours)
+alltripdata = alltripdata[alltripdata.trip_duration <= 10800]
+
+# Remove trips with trip_distance above 200 miles (probably errors for intra-city trips)
+alltripdata = alltripdata[alltripdata.trip_distance <= 500]
+
+# Remove trips with trip_distance under 0.1 miles
+alltripdata = alltripdata[alltripdata.trip_distance >= 0.1]
+
+print(alltripdata)
+
+# Check correlation, this gives an idea of the relation between different variables/features
+fig, axes = plt.subplots(figsize = (12,6))
+correlation = alltripdata.corr()
+corr_m = sns.heatmap(round(correlation, 2), annot=True, cmap='Blues', ax=axes, fmt='.2f')
+
+# Extract the relevant columns
+tripdata = alltripdata[['RatecodeID', 'trip_duration', 'fare_amount', 'payment_type', 'PULocationID', 'DOLocationID', 'trip_distance', 'tip_amount']]
+
+# Check correlation, this gives an idea of the relation between different variables/features
+fig, axes = plt.subplots(figsize = (12, 6))
+correlation = tripdata.corr()
+corr_m = sns.heatmap(round(correlation, 2), annot=True, cmap='Blues', ax=axes, fmt='.2f')
+
+### --- VISUALISE POSSIBLE RELATIONSHIPS ---
+
+#distribution of tip_amount (dollars)
 fig, ax = plt.subplots(figsize=(12,8))
-ax.set_xlabel ('Tip amount')
-ax.set_ylabel ('Frequency')
-plt.hist(trips['tip_amount'])
-plt.legend()
-plt.show()  
- 
-fig, ax = plt.subplots(figsize=(12,8))
-ax.set_xlabel ('Weekday')
-ax.set_ylabel ('Frequency')
-plt.hist(trips['weekday'])
-plt.legend()
-plt.show() 
+plt.hist(tripdata['tip_amount'], 500, color='pink', alpha=0.5)
+plt.title('Tip amount histogram')
+plt.xlabel('Tip amount')
+plt.xlim(0, 20)
+plt.ylabel('Frequency')
+plt.show()
 
-fig, ax = plt.subplots(figsize=(12,8))
-ax.set_xlabel ('Passenger count')
-ax.set_ylabel ('Frequency')
-plt.hist(trips['passenger_count'])
-plt.legend()
-plt.show() 
+# # tip_percentage and fare_amount (dollars)
+# plt.scatter(tripdata['fare_amount'], tripdata['tip_percentage'], c='yellow', alpha=0.5)
+# plt.title('Fare amount vs. taxi tips')
+# plt.xlabel('Fare amount (dollars)')
+# plt.ylabel('Tip as percentage of fare')
+# plt.show()
 
-fig, ax = plt.subplots(figsize=(12,8))
-ax.set_xlabel ('Tip amount')
-ax.scatter(trips['passenger_count'], trips['trip_amount'])
-plt.legend()
-plt.show()  
+# # tip_percentage and trip_distance (miles)
+# plt.scatter(tripdata['trip_distance'], tripdata['tip_percentage'], c='red', alpha=0.5)
+# plt.title('Trip distance vs. taxi tips')
+# pplt..xlabel('Trip distance (miles)')
+# plt.ylabel('Tip as percentage of fare')
+# plt.show()
+
+# # tip_percentage and trip_duration
+# plt.scatter(tripdata['trip_duration'], tripdata['tip_percentage'], c='blue', alpha=0.5)
+# plt.title('Trip duration vs. taxi tips')
+# plt.xlabel('Trip duration (seconds)')
+# plt.ylabel('Tip as percentage of fare')
+# plt.show()
+
+# # tip_percentage and passenger_count
+# plt.scatter(tripdata['passenger_count'], tripdata['tip_percentage'], c='green', alpha=0.5)
+# plt.title('Passenger count vs. taxi tips')
+# plt.xlabel('Passenger count')
+# plt.ylabel('Tip as percentage of fare')
+# plt.show()
+
+# # tip_percentage and hour of day
+# plt.scatter(tripdata['trip_hour'], tripdata['tip_percentage'], c='magenta', alpha=0.5)
+# plt.title('Hour of day vs. taxi tips')
+# plt.xlabel('Hour of day')
+# plt.ylabel('Tip as percentage of fare')
+# plt.show()
+
+
+### --- FURTHER DATA PREPARATION ---
+
+# Add an empty column for the tip classes
+tripdata['tip_class'] = " "
+
+# Assign tip classes: 'no tip', 'regular' and 'generous' (more than 30% of fare)
+tripdata.loc[tripdata['tip_amount'] == 0, 'tip_class'] = 'no tip'
+tripdata.loc[(tripdata['tip_amount'] > 0) & (tripdata['tip_amount'] <= 3), 'tip_class'] = 'regular'
+tripdata.loc[tripdata['tip_amount'] > 3, 'tip_class'] = 'generous'
+
+# Print the occurrence of the different tip classes
+print('--- Unbalanced tip class occurrence: ---\n',tripdata['tip_class'].value_counts())
+
+# From the printed data it becomes visible that tip classes do not occur in equal shares
+# This means the data needs to be balanced. 'No tip' is the limiting class due to its most limited occurrence.
+notip = tripdata.loc[tripdata['tip_class'] == 'no tip']
+
+# We randomly select an equal amount of trips from the 'regular' and 'generous' class
+regtip = tripdata.loc[tripdata['tip_class'] == 'regular']
+regtip = regtip.sample(n=len(notip))
+
+gentip = tripdata.loc[tripdata['tip_class'] == 'generous']
+gentip = gentip.sample(n=len(notip))
+
+# Now we append the balanced classes in a single dataframe where the new shares are (1:1:1)
+balancedtripdata = notip.append([regtip,gentip])
+
+## Check if the balancing worked
+# Visualise the occurrence of the different tip classes
+print('--- Balanced tip class occurrence: ---\n',balancedtripdata['tip_class'].value_counts())
+
+
+## --- FINAL DATA PREPARATION FOR MLR AND MLP CLASSIFIER ---
+
+# Setting the features (X) and dependent variable (Y)
+X = balancedtripdata.iloc[:,0:7]
+Y = balancedtripdata['tip_class']
+
+# Label encoding is required since the model only accepts numeric values
+from sklearn import preprocessing
+from sklearn.preprocessing import LabelEncoder
+
+LE = preprocessing.LabelEncoder()
+LE.fit(Y)
+Y = LE.transform(Y)
+
+# In order to know which class has been assigned which label
+LE_name_mapping = dict(zip(LE.classes_, LE.transform(LE.classes_)))
+print('Classes are label encoded as follows: \n',LE_name_mapping)
+
+
+# Split the data into training, validation and test data (60:20:20)
+from sklearn.model_selection import train_test_split
+
+X_train,X_test,Y_train,Y_test = train_test_split(X,Y,test_size=0.2,random_state = 1)
+X_train,X_val,Y_train,Y_val = train_test_split(X_train,Y_train,test_size=0.25,random_state = 1)
+
+# Datapoints also need to be scaled into dataset with mean 0 and std = 1
+X_train_scale = preprocessing.scale(X_train)
+X_val_scale = preprocessing.scale(X_val)
+X_test_scale = preprocessing.scale(X_test)
+
+# Print the number of data points in training, validation, and test dataset.
+print("Datapoints in training set:",len(X_train))
+print("Datapoints in validation set:",len(X_val))
+print("Datapoints in test set:",len(X_test))
+
+### --- MULTINOMIAL LOGISTIC REGRESSION ---
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report
+
+# Train the MLR model
+train_logreg = LogisticRegression(random_state=1,max_iter = 300)
+train_logreg.fit(X_train_scale,Y_train)
+
+# Prediction with MLR to the train data
+pred_logreg = train_logreg.predict(X_train_scale)
+print("For Logistic Regression: ")
+print(classification_report(Y_train, pred_logreg))
+print ("Accuracy of the above model is: ",accuracy_score(pred_logreg,Y_train))
+
+# Prediction with MLR to the validation data
+pred_logreg = train_logreg.predict(X_val_scale)
+print("For Logistic Regression: ")
+print(classification_report(Y_val, pred_logreg))
+print ("Accuracy of the above model is: ",accuracy_score(pred_logreg,Y_val))
+
+# Evaluate model with cross-validation on the test data
+from sklearn.model_selection import cross_val_score
+cross_val = cross_val_score(train_logreg, X_test_scale ,Y_test)#, cv=10)
+print("%0.2f accuracy with a standard deviation of %0.2f" % (cross_val.mean(), cross_val.std()))
+cross_val = pd.Series(cross_val)
+print((cross_val.min(), cross_val.mean(), cross_val.max()))
+
+## ### --- MULTI-LAYER PERCEPTRON CLASSIFIER ---
+#
+#from sklearn.neural_network import MLPClassifier
+#from sklearn.model_selection import cross_val_score
+#
+## Train the neural network
+#train_nn = MLPClassifier(activation='relu', solver='adam', alpha=1e-5, hidden_layer_sizes=(8, 16, 32, 64), random_state=1, verbose=True)
+#train_nn.fit(X_train_scale,Y_train)
+#
+## Prediction with Multi-layer Perceptron Classifier
+#pred_nn = train_nn.predict(X_val_scale)
+#print("For Neural Network: ")
+#print(classification_report(Y_val, pred_nn))
+#print ("Accuracy of the above model is: ",accuracy_score(pred_nn,Y_val))
+
+
+
+### --- TIMEKEEPING ---
+
+print("--- %s seconds to run the code ---" % (time.time() - start_time))
+
+
+
+
 
 
 
