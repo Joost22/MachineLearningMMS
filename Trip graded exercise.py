@@ -194,49 +194,49 @@ print("Datapoints in training set:",len(X_train))
 print("Datapoints in validation set:",len(X_val))
 print("Datapoints in test set:",len(X_test))
 
-### --- MULTINOMIAL LOGISTIC REGRESSION ---
+# ### --- MULTINOMIAL LOGISTIC REGRESSION ---
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
 
-# Train the MLR model
-train_logreg = LogisticRegression(random_state=1,max_iter = 300)
-train_logreg.fit(X_train_scale,Y_train)
+# # Train the MLR model
+# train_logreg = LogisticRegression(random_state=1,max_iter = 300)
+# train_logreg.fit(X_train_scale,Y_train)
 
-# Prediction with MLR to the train data
-pred_logreg = train_logreg.predict(X_train_scale)
-print("For Logistic Regression: ")
-print(classification_report(Y_train, pred_logreg))
-print ("Accuracy of the above model is: ",accuracy_score(pred_logreg,Y_train))
+# # Prediction with MLR to the train data
+# pred_logreg = train_logreg.predict(X_train_scale)
+# print("For Logistic Regression: ")
+# print(classification_report(Y_train, pred_logreg))
+# print ("Accuracy of the above model is: ",accuracy_score(pred_logreg,Y_train))
 
-# Prediction with MLR to the validation data
-pred_logreg = train_logreg.predict(X_val_scale)
-print("For Logistic Regression: ")
-print(classification_report(Y_val, pred_logreg))
-print ("Accuracy of the above model is: ",accuracy_score(pred_logreg,Y_val))
+# # Prediction with MLR to the validation data
+# pred_logreg = train_logreg.predict(X_val_scale)
+# print("For Logistic Regression: ")
+# print(classification_report(Y_val, pred_logreg))
+# print ("Accuracy of the above model is: ",accuracy_score(pred_logreg,Y_val))
 
-# Evaluate model with cross-validation on the test data
+# # Evaluate model with cross-validation on the test data
+# from sklearn.model_selection import cross_val_score
+# cross_val = cross_val_score(train_logreg, X_test_scale ,Y_test)#, cv=10)
+# print("%0.2f accuracy with a standard deviation of %0.2f" % (cross_val.mean(), cross_val.std()))
+# cross_val = pd.Series(cross_val)
+# print((cross_val.min(), cross_val.mean(), cross_val.max()))
+
+# ### --- MULTI-LAYER PERCEPTRON CLASSIFIER ---
+
+from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import cross_val_score
-cross_val = cross_val_score(train_logreg, X_test_scale ,Y_test)#, cv=10)
-print("%0.2f accuracy with a standard deviation of %0.2f" % (cross_val.mean(), cross_val.std()))
-cross_val = pd.Series(cross_val)
-print((cross_val.min(), cross_val.mean(), cross_val.max()))
 
-## ### --- MULTI-LAYER PERCEPTRON CLASSIFIER ---
-#
-#from sklearn.neural_network import MLPClassifier
-#from sklearn.model_selection import cross_val_score
-#
-## Train the neural network
-#train_nn = MLPClassifier(activation='relu', solver='adam', alpha=1e-5, hidden_layer_sizes=(8, 16, 32, 64), random_state=1, verbose=True)
-#train_nn.fit(X_train_scale,Y_train)
-#
-## Prediction with Multi-layer Perceptron Classifier
-#pred_nn = train_nn.predict(X_val_scale)
-#print("For Neural Network: ")
-#print(classification_report(Y_val, pred_nn))
-#print ("Accuracy of the above model is: ",accuracy_score(pred_nn,Y_val))
+# Train the neural network
+train_nn = MLPClassifier(activation='relu', solver='adam', alpha=1e-5, hidden_layer_sizes=(8, 16, 32, 64), random_state=1, verbose=True)
+train_nn.fit(X_train_scale,Y_train)
+
+# Prediction with Multi-layer Perceptron Classifier
+pred_nn = train_nn.predict(X_val_scale)
+print("For Neural Network: ")
+print(classification_report(Y_val, pred_nn))
+print ("Accuracy of the above model is: ",accuracy_score(pred_nn,Y_val))
 
 
 
