@@ -134,8 +134,8 @@ tripdata['tip_class'] = " "
 
 # Assign tip classes: 'no tip', 'regular' and 'generous' (more than 30% of fare)
 tripdata.loc[tripdata['tip_amount'] == 0, 'tip_class'] = 'no tip'
-tripdata.loc[(tripdata['tip_amount'] > 0) & (tripdata['tip_amount'] <= 3), 'tip_class'] = 'regular'
-tripdata.loc[tripdata['tip_amount'] > 3, 'tip_class'] = 'generous'
+tripdata.loc[(tripdata['tip_amount'] > 0) & (tripdata['tip_amount'] <= 4), 'tip_class'] = 'regular'
+tripdata.loc[tripdata['tip_amount'] > 4, 'tip_class'] = 'generous'
 
 # Print the occurrence of the different tip classes
 print('--- Unbalanced tip class occurrence: ---\n',tripdata['tip_class'].value_counts())
@@ -229,7 +229,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import cross_val_score
 
 # Train the neural network
-train_nn = MLPClassifier(activation='relu', solver='adam', alpha=1e-5, hidden_layer_sizes=(7,6,5,4,), random_state=1, verbose=True)
+train_nn = MLPClassifier(activation='relu', solver='adam', alpha=1e-5, hidden_layer_sizes=(512,256,128,64,), random_state=1, verbose=True)
 train_nn.fit(X_train_scale,Y_train)
 
 # Prediction with Multi-layer Perceptron Classifier
