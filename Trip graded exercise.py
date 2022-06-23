@@ -229,7 +229,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import cross_val_score
 
 # Train the neural network
-train_nn = MLPClassifier(activation='relu', solver='adam', alpha=1e-5, hidden_layer_sizes=(8, 16, 32, 64), random_state=1, verbose=True)
+train_nn = MLPClassifier(activation='relu', solver='adam', alpha=1e-5, hidden_layer_sizes=(7,6,5,4,), random_state=1, verbose=True)
 train_nn.fit(X_train_scale,Y_train)
 
 # Prediction with Multi-layer Perceptron Classifier
@@ -243,14 +243,3 @@ print ("Accuracy of the above model is: ",accuracy_score(pred_nn,Y_val))
 ### --- TIMEKEEPING ---
 
 print("--- %s seconds to run the code ---" % (time.time() - start_time))
-
-
-
-
-
-
-
-
-
-
-
