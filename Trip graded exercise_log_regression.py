@@ -36,14 +36,16 @@ alltripdata['trip_hour'] = alltripdata['tpep_pickup_datetime'].dt.hour
 # Calculate the trip durations in seconds
 alltripdata['trip_duration'] = (alltripdata['tpep_dropoff_datetime'] - alltripdata['tpep_pickup_datetime']).dt.total_seconds()
 
-print(alltripdata)
+# Calculate the tips as percentage of the fare
+alltripdata['tip_percentage'] = alltripdata['tip_amount'] / alltripdata['fare_amount']
+
 
 ### --- DATA FILTERING ---
 
 # Remove all trips that aren't paid by creditcard (= 1), these tips are unreliable since not all cash tips are declared due to taxation
 alltripdata = alltripdata[alltripdata.payment_type == 1]
 
-# Remove all trips with 0 or NaN column values except for the 'trip_hour', tip_amount' and 'tip_percentage' columns since these can be 0.
+# Remove all trips with 0 or NaN column values except for the 'trip_hour', tip_amount' columns since these can be 0.
 alltripdata = alltripdata.replace(0, np.nan).dropna(axis=0, how='any', subset = ['trip_duration', 'payment_type', 'fare_amount', 'PULocationID', 'DOLocationID', 'trip_distance'])
 alltripdata = alltripdata.fillna(0)
 
@@ -59,11 +61,26 @@ alltripdata = alltripdata[alltripdata.trip_duration >= 30]
 # Remove trips with duration above 10800 seconds (3 hours)
 alltripdata = alltripdata[alltripdata.trip_duration <= 10800]
 
-# Remove trips with trip_distance above 200 miles (probably errors for intra-city trips)
-alltripdata = alltripdata[alltripdata.trip_distance <= 500]
+# Remove trips with trip_distance above 100 miles (probably errors for intra-city trips)
+alltripdata = alltripdata[alltripdata.trip_distance <= 100]
 
 # Remove trips with trip_distance under 0.1 miles
 alltripdata = alltripdata[alltripdata.trip_distance >= 0.1]
+
+# Remove trips with fare_amount above $250 
+alltripdata = alltripdata[alltripdata.fare_amount <= 250]
+
+# Remove trips with fare_amount under $2.50 initial charge
+alltripdata = alltripdata[alltripdata.fare_amount >= 2.5]
+
+# Remove trips with ratecodeID's of 99
+alltripdata = alltripdata[alltripdata.RatecodeID <= 6]
+
+# Remove trips with passengercount higher than 6
+alltripdata = alltripdata[alltripdata.passenger_count <= 6]
+
+# Remove all tips over 500% of fare (assuming that tips above 500% are errors)
+alltripdata =alltripdata[alltripdata.tip_percentage <= 5]
 
 print(alltripdata)
 
@@ -134,8 +151,8 @@ tripdata['tip_class'] = " "
 
 # Assign tip classes: 'no tip', 'regular' and 'generous' (more than 30% of fare)
 tripdata.loc[tripdata['tip_amount'] == 0, 'tip_class'] = 'no tip'
-tripdata.loc[(tripdata['tip_amount'] > 0) & (tripdata['tip_amount'] <= 3), 'tip_class'] = 'regular'
-tripdata.loc[tripdata['tip_amount'] > 3, 'tip_class'] = 'generous'
+tripdata.loc[(tripdata['tip_amount'] > 0) & (tripdata['tip_amount'] <= 4), 'tip_class'] = 'regular'
+tripdata.loc[tripdata['tip_amount'] > 4, 'tip_class'] = 'generous'
 
 # Print the occurrence of the different tip classes
 print('--- Unbalanced tip class occurrence: ---\n',tripdata['tip_class'].value_counts())
@@ -199,7 +216,7 @@ print("Datapoints in test set:",len(X_test))
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report
-
+from sklearn.metrics import confusion_matrix
 
 # Train the MLR model
 # class_weights = compute_class_weight('balanced', classes=np.unique(Y_train), y=Y_train)
@@ -211,12 +228,14 @@ pred_logreg = train_logreg.predict(X_test_scale)
 print("Prediction on test set:")
 print(classification_report(Y_test, pred_logreg))
 print ("Accuracy of the above model is: ",accuracy_score(pred_logreg,Y_test))
+print(confusion_matrix(Y_test,pred_logreg))
 
 # Prediction with MLR to the validation data
-pred_logreg = train_logreg.predict(X_val_scale)
-print("Prediction on validation set:")
-print(classification_report(Y_val, pred_logreg))
-print ("Accuracy of the above model is: ",accuracy_score(pred_logreg,Y_val))
+# pred_logreg = train_logreg.predict(X_val_scale)
+# print("Prediction on validation set:")
+# print(classification_report(Y_val, pred_logreg))
+# print ("Accuracy of the above model is: ",accuracy_score(pred_logreg,Y_val))
+# print(confusion_matrix(Y_val,pred_logreg))
 
 # Evaluate model with cross-validation on the test data
 from sklearn.model_selection import cross_val_score
