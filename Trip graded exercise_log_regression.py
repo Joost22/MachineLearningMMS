@@ -22,7 +22,7 @@ import os
 import pyarrow.parquet as pq
 
 # Read the .parquet data as dataframe
-alltripdata = pq.read_table('yellow_tripdata_2018-03.parquet')
+alltripdata = pq.read_table('yellow_tripdata_2018-01.parquet')
 alltripdata = alltripdata.to_pandas()
 
 # Set datetime columns to the correct .pd format
@@ -151,8 +151,8 @@ tripdata['tip_class'] = " "
 
 # Assign tip classes: 'no tip', 'regular' and 'generous' (more than 30% of fare)
 tripdata.loc[tripdata['tip_amount'] == 0, 'tip_class'] = 'no tip'
-tripdata.loc[(tripdata['tip_amount'] > 0) & (tripdata['tip_amount'] <= 3.5), 'tip_class'] = 'regular'
-tripdata.loc[tripdata['tip_amount'] > 3.5, 'tip_class'] = 'generous'
+tripdata.loc[(tripdata['tip_amount'] > 0) & (tripdata['tip_amount'] <= 4), 'tip_class'] = 'regular'
+tripdata.loc[tripdata['tip_amount'] > 4, 'tip_class'] = 'generous'
 
 # Print the occurrence of the different tip classes
 print('--- Unbalanced tip class occurrence: ---\n',tripdata['tip_class'].value_counts())
